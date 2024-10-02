@@ -19,6 +19,13 @@ check_command() {
     fi
 }
 
+# Function to activate conda environment and run a command
+run_with_conda() {
+    conda activate "$ENV_NAME"
+    check_command "conda activate $ENV_NAME"
+    eval "$1"
+}
+
 # Step 1: Set up UI
 echo "Setting up UI..."
 cd ui || exit
@@ -46,41 +53,36 @@ check_command "nodemon in atm-locator"
 # Step 4: Create Python Virtual Environment
 echo "Creating Python Virtual Environment..."
 cd ../dashboard || exit
-conda create --name "$ENV_NAME" -y
-check_command "conda create environment"
-conda activate "$ENV_NAME"
-
-# Install requirements
-pip install -r requirements.txt
+if ! conda info --envs | grep -q "$ENV_NAME"; then
+    conda create --name "$ENV_NAME" -y
+    check_command "conda create environment"
+fi
+run_with_conda "pip install -r requirements.txt"
 check_command "pip install in dashboard"
 
 # Step 5: Start Python Microservices
 # Accounts Microservice
 echo "Starting Accounts Microservice..."
 cd ../accounts || exit
-conda activate "$ENV_NAME"
-python accounts.py &
+run_with_conda "python accounts.py &"
 check_command "python accounts.py"
 
 # Transactions Microservice
 echo "Starting Transactions Microservice..."
 cd ../transactions || exit
-conda activate "$ENV_NAME"
-python transaction.py &
+run_with_conda "python transaction.py &"
 check_command "python transaction.py"
 
 # Loan Microservice
 echo "Starting Loan Microservice..."
 cd ../loan || exit
-conda activate "$ENV_NAME"
-python loan.py &
+run_with_conda "python loan.py &"
 check_command "python loan.py"
 
 # Step 6: Start Dashboard Microservice
 echo "Starting Dashboard Microservice..."
 cd ../dashboard || exit
-conda activate "$ENV_NAME"
-python dashboard.py &
+run_with_conda "python dashboard.py &"
 check_command "python dashboard.py"
 
 # Final Step: Access the application
